@@ -1,10 +1,10 @@
-
 pipeline {
     agent any
 
     triggers {
-        // Registers job as a target for incoming GitHub Webhook payloads
-        githubPush()
+        // Empty pollSCM registers the job for instant GitHub Webhook pushes 
+        // without running background polling schedules!
+        pollSCM('')
     }
 
     stages {
