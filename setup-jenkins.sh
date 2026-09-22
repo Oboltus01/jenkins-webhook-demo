@@ -51,6 +51,17 @@ docker exec -u root "${JENKINS_CONTAINER}" jenkins-plugin-cli --plugins \
   git \
   github
 
+echo "==> Enabling proxy-compatible CSRF crumbs for Killercoda..."
+docker exec -u root "${JENKINS_CONTAINER}" bash -lc 'mkdir -p /var/jenkins_home/init.groovy.d && cat > /var/jenkins_home/init.groovy.d/killercoda-proxy-crumb.groovy <<'"'"'GROOVY'"'"'
+import jenkins.model.Jenkins
+import hudson.security.csrf.DefaultCrumbIssuer
+
+def j = Jenkins.get()
+j.setCrumbIssuer(new DefaultCrumbIssuer(true))
+j.save()
+println("Configured proxy-compatible CSRF crumb issuer")
+GROOVY'
+
 echo "==> Restarting Jenkins..."
 docker restart "${JENKINS_CONTAINER}" >/dev/null
 
