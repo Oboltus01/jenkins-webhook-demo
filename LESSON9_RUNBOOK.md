@@ -168,13 +168,52 @@ lesson3-parameterized-job
 Запуск:
 
 ```bash
-curl -X POST "http://localhost:8080/job/lesson3-parameterized-job/buildWithParameters?RELEASE_TAG=v2.5.1&TARGET_ENV=production&RUN_TESTS=false"
+curl -sS -o /dev/null -w "HTTP %{http_code}\n" -X POST \
+"http://localhost:8080/job/lesson3-parameterized-job/buildWithParameters?RELEASE_TAG=v2.5.1&TARGET_ENV=production&RUN_TESTS=false"
 ```
 
-Проверка лога:
+Нормальный ответ Jenkins на постановку job в очередь:
+
+```text
+HTTP 201
+```
+
+Важно: не читать `consoleText` сразу же. Pipeline запускается асинхронно, поэтому в первые секунды лог может содержать только:
+
+```text
+Started by user unknown or anonymous
+```
+
+Подождать завершения build автоматически:
+
+```bash
+echo "Waiting for Jenkins build..."
+
+while true; do
+    JSON=$(curl -s http://localhost:8080/job/lesson3-parameterized-job/lastBuild/api/json)
+
+    BUILDING=$(echo "$JSON" | python3 -c 'import sys,json; d=json.load(sys.stdin); print(str(d.get("building", False)).lower())' 2>/dev/null)
+
+    if [ "$BUILDING" = "false" ]; then
+        break
+    fi
+
+    echo "Build is still running..."
+    sleep 2
+done
+```
+
+Теперь проверить полный лог:
 
 ```bash
 curl -s http://localhost:8080/job/lesson3-parameterized-job/lastBuild/consoleText
+```
+
+Или только итоговые строки:
+
+```bash
+curl -s http://localhost:8080/job/lesson3-parameterized-job/lastBuild/consoleText \
+| grep -E "Deploying Release Tag|Target Environment|Execute Test Suite|Finished:"
 ```
 
 Ожидаемый результат:
